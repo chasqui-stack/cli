@@ -55,6 +55,12 @@ def test_new_inits_git_with_clean_history(tmp_path, mini_stack, monkeypatch):
     _run_new(tmp_path, mini_stack)
     project = tmp_path / "demo"
     assert (project / ".git").is_dir()
+    # the commit happens after every scaffold/provision write — the tree
+    # must be born clean
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=project, capture_output=True, text=True
+    ).stdout.strip()
+    assert dirty == ""
     # .envs must be ignored by the per-service .gitignore
     tracked = subprocess.run(
         ["git", "status", "--porcelain", "--ignored", "core/.env"],

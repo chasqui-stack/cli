@@ -98,10 +98,6 @@ def run_new(
     if not gitignore.exists():
         gitignore.write_text(ROOT_GITIGNORE, encoding="utf-8")
 
-    # First commit BEFORE provisioning: a clean tree (.envs are gitignored
-    # per service — secrets never enter history).
-    _git_init(project_dir, echo)
-
     results: list[provision.StepResult] = []
     if skip_provision:
         echo("⏭  Provisioning skipped (--skip-provision)")
@@ -112,6 +108,11 @@ def run_new(
     else:
         echo("🔧 Provisioning …")
         results = provision.run(project_dir, provision.plan(a, secrets), echo=echo)
+
+    # First commit AFTER provisioning so lockfile updates (npm/uv) land in
+    # it — a fresh project starts with a clean tree. Secrets never enter
+    # history: the .envs are gitignored per service.
+    _git_init(project_dir, echo)
 
     echo(epilogue.build(a, secrets, results))
     return project_dir
