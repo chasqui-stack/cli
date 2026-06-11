@@ -127,10 +127,21 @@ def _git_init(project_dir: Path, echo=print) -> None:
             ["git", "init", "-q", "-b", "main"], cwd=project_dir, check=True, timeout=30
         )
         subprocess.run(["git", "add", "-A"], cwd=project_dir, check=True, timeout=30)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "Initial commit (chasqui new)"],
+        # No git identity configured (fresh machines, CI) -> commit with a
+        # neutral fallback instead of silently leaving everything staged.
+        identity: list[str] = []
+        probe = subprocess.run(
+            ["git", "config", "user.email"],
             cwd=project_dir,
-            check=False,  # commit fails without user.name/email config — non-fatal
+            capture_output=True,
+            timeout=30,
+        )
+        if probe.returncode != 0:
+            identity = ["-c", "user.name=chasqui", "-c", "user.email=chasqui@localhost"]
+        subprocess.run(
+            ["git", *identity, "commit", "-q", "-m", "Initial commit (chasqui new)"],
+            cwd=project_dir,
+            check=True,
             timeout=30,
         )
     except Exception as exc:  # git trouble must not kill the scaffold
