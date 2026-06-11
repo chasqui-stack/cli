@@ -20,9 +20,9 @@ A WhatsApp AI agent built on the [Chasqui stack](https://github.com/chasqui-stac
 
 | Path | Service | Run |
 |------|---------|-----|
-| `core/` | FastAPI + LangGraph + Postgres/pgvector — the agent | `make dev` (:8090) |
-| `whatsapp/` | WhatsApp channel gateway (PyWa) | `make dev` (:8000) |
-| `admin/` | Operator panel (React + Vite) | `npm run dev` (:5191) |
+| `core/` | FastAPI + LangGraph + Postgres/pgvector — the agent | `make dev` (:{core_port}) |
+| `whatsapp/` | WhatsApp channel gateway (PyWa) | `make dev` (:{gateway_port}) |
+| `admin/` | Operator panel (React + Vite) | `npm run dev` (:{admin_port}) |
 
 Configuration lives in each service's `.env` (written by the wizard): the
 LLM provider/model, storage, and notifications are swappable there at any
@@ -85,7 +85,13 @@ def run_new(
     from chasqui.stack import STACK_TAG
 
     (project_dir / "README.md").write_text(
-        README_TEMPLATE.format(name=a.project_name, tag=ref or STACK_TAG),
+        README_TEMPLATE.format(
+            name=a.project_name,
+            tag=ref or STACK_TAG,
+            core_port=a.core_port,
+            gateway_port=a.gateway_port,
+            admin_port=a.admin_port,
+        ),
         encoding="utf-8",
     )
     gitignore = project_dir / ".gitignore"

@@ -69,3 +69,25 @@ def test_admin_env_locale():
     a = default_answers("demo")
     a.locale = "en"
     assert "VITE_DEFAULT_LOCALE=en" in envfiles.render_admin_env(a)
+
+
+def test_custom_ports_flow_everywhere():
+    a = default_answers("demo")
+    a.core_port, a.gateway_port, a.admin_port = 9090, 9000, 6191
+    s, core, wa = _render_all(a)
+    admin = envfiles.render_admin_env(a)
+    assert "PORT=9090" in core
+    assert "CHANNEL_WHATSAPP_SEND_URL=http://localhost:9000/send" in core
+    assert "CORS_ORIGINS=http://localhost:6191," in core
+    assert "PORT=9000" in wa
+    assert "CORE_URL=http://localhost:9090" in wa
+    assert "VITE_API_BASE_URL=http://localhost:9090" in admin
+    assert "VITE_PORT=6191" in admin
+
+
+def test_default_ports():
+    a = default_answers("demo")
+    s, core, wa = _render_all(a)
+    assert "PORT=8090" in core
+    assert "PORT=8000" in wa
+    assert "VITE_PORT=5191" in envfiles.render_admin_env(a)

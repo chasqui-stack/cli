@@ -20,9 +20,11 @@ def build(a: Answers, s: GeneratedSecrets, results: list[StepResult]) -> str:
         lines.append("")
 
     lines.append("Start the stack (three terminals):")
-    lines.append(f"  cd {a.slug}/core && make dev        # API on :8090")
-    lines.append(f"  cd {a.slug}/whatsapp && make dev    # gateway on :8000")
-    lines.append(f"  cd {a.slug}/admin && npm run dev    # panel on http://localhost:5191")
+    lines.append(f"  cd {a.slug}/core && make dev        # API on :{a.core_port}")
+    lines.append(f"  cd {a.slug}/whatsapp && make dev    # gateway on :{a.gateway_port}")
+    lines.append(
+        f"  cd {a.slug}/admin && npm run dev    # panel on http://localhost:{a.admin_port}"
+    )
     lines.append("")
 
     lines.append("Admin panel login:")
@@ -36,9 +38,11 @@ def build(a: Answers, s: GeneratedSecrets, results: list[StepResult]) -> str:
     if not a.wa_configured:
         steps.append("Fill the WA_* credentials in whatsapp/.env")
     steps += [
-        "Expose the gateway: ngrok http 8000",
-        "Callback URL: the ngrok https URL (or set WA_CALLBACK_URL in whatsapp/.env)",
+        f"Expose the gateway: ngrok http {a.gateway_port}",
+        "Set WA_CALLBACK_URL in whatsapp/.env to the ngrok https URL and "
+        "restart the gateway (it registers the webhook itself)",
         f"Verify token (already in whatsapp/.env): {s.wa_verify_token}",
+        "Full guide: https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md",
     ]
     lines += [f"  {i}. {step}" for i, step in enumerate(steps, start=1)]
     lines.append("")

@@ -68,6 +68,12 @@ class Answers:
     pg_password: str = ""
     pg_db: str = ""  # defaults to the project slug (underscored)
 
+    # Service ports (core PORT / gateway PORT / admin VITE_PORT) — change
+    # them to run several Chasqui stacks side by side.
+    core_port: int = 8090
+    gateway_port: int = 8000
+    admin_port: int = 5191
+
     # WhatsApp Business (gateway .env: WA_*) — skippable, fill later
     wa_configured: bool = False
     wa_phone_id: str = ""
@@ -190,10 +196,31 @@ def _ask_postgres(a: Answers) -> None:
     a.pg_db = questionary.text("Database name:", default=a.db_name).ask()
 
 
+def _ask_ports(a: Answers) -> None:
+    a.core_port = int(
+        questionary.text(
+            "Core API port (Enter for default — change to run several "
+            "stacks side by side):",
+            default=str(a.core_port),
+        ).ask()
+    )
+    a.gateway_port = int(
+        questionary.text("WhatsApp gateway port:", default=str(a.gateway_port)).ask()
+    )
+    a.admin_port = int(
+        questionary.text("Admin panel port:", default=str(a.admin_port)).ask()
+    )
+
+
+WHATSAPP_GUIDE_URL = (
+    "https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md"
+)
+
+
 def _ask_whatsapp(a: Answers) -> None:
     a.wa_configured = questionary.confirm(
         "Configure WhatsApp Business credentials now? (you can fill "
-        "whatsapp/.env later)",
+        f"whatsapp/.env later — how to get them: {WHATSAPP_GUIDE_URL})",
         default=False,
     ).ask()
     if not a.wa_configured:
@@ -271,6 +298,7 @@ def run_wizard(project_name: str) -> Answers:
     _ask_llm(a)
     _ask_embeddings(a)
     _ask_postgres(a)
+    _ask_ports(a)
     _ask_whatsapp(a)
     _ask_locale_and_admin(a)
     _ask_extras(a)

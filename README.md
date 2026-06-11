@@ -8,9 +8,10 @@ Zero to a configured, locally-running WhatsApp AI agent in one command — the
 `rails new` of the [Chasqui stack](https://github.com/chasqui-stack/chasqui).
 
 The wizard asks only what becomes a `.env` variable (LLM provider/model,
-embeddings + dimension, where your Postgres is, WhatsApp credentials, default
-language, first admin, optional media bucket / handoff notifications / deploy
-params) — then downloads the three services at a pinned release tag
+embeddings + dimension, where your Postgres is, service ports — so several
+stacks coexist —, WhatsApp credentials ([how to get them](https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md)),
+default language, first admin, optional media bucket / handoff notifications
+/ deploy params) — then downloads the three services at a pinned release tag
 (degit-style, no git history), brands them, writes the `.env`s, generates the
 shared secrets, and provisions: `uv sync` + `npm install` + `createdb` +
 migrations + admin seed. Every step that can't run prints its manual command
