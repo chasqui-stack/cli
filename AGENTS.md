@@ -45,6 +45,38 @@ uv sync && uv run pytest
 uv run chasqui new demo --defaults --skip-provision --source ~/path/to/chasqui
 ```
 
+## Releasing a new version (the ceremony — order matters)
+
+The CLI is release-critical: `uvx chasqui new` scaffolds the stack at the
+tag pinned in `stack.py`, so services tag FIRST, then the CLI pins and
+publishes. PyPI publishing is **trusted publishing** (no tokens): the
+`publish.yml` workflow is registered as a trusted publisher on PyPI
+(project `chasqui`, owner `chasqui-stack`, repo `cli`, environment `pypi`)
+under Willy's account — pushing a `v*` tag IS the publish action.
+
+1. **Tag the services** — in core, whatsapp and admin:
+   `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
+   In the parent: bump submodule pointers, commit, tag `vX.Y.Z`, push.
+2. **Pin + bump the CLI** — `STACK_TAG = "vX.Y.Z"` in
+   `src/chasqui/stack.py`, and the version in **BOTH**
+   `pyproject.toml` and `src/chasqui/__init__.py` (two places, keep them
+   equal). `uv run pytest`, commit, push.
+3. **Publish** — `git tag -a vX.Y.Z && git push origin vX.Y.Z`. The tag
+   triggers `publish.yml`: tests → `uv build` → PyPI. Watch it
+   (`gh run watch`); if it fails BEFORE upload, fix, delete and re-push
+   the tag. A version that reached PyPI is burned — never reusable, ship
+   X.Y.Z+1.
+4. **GitHub Releases** — `gh release create vX.Y.Z` here and on the
+   parent (release notes live on the parent's).
+5. **Verify from the wild** —
+   `uvx chasqui@X.Y.Z --version` and
+   `uvx chasqui new demo --defaults --skip-provision` in a scratch dir
+   (this also proves the codeload fetch at the new tag).
+
+Hard rules: never tag the CLI before the services' tags exist (step 5
+would 404); a stack-only patch still needs a CLI release if `STACK_TAG`
+must move.
+
 ## Planning
 
 PRPs and the sprint plan live in the parent repo (`chasqui/PRPs`,
