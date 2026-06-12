@@ -4,8 +4,9 @@
 uvx chasqui new mi-agente
 ```
 
-Zero to a configured, locally-running WhatsApp AI agent in one command — the
-`rails new` of the [Chasqui stack](https://github.com/chasqui-stack/chasqui).
+Zero to a configured, locally-running AI chat agent in one command — the
+project generator of the [Chasqui stack](https://github.com/chasqui-stack/chasqui)
+(WhatsApp channel included; more channels on the roadmap).
 
 The wizard asks only what becomes a `.env` variable (LLM provider/model,
 embeddings + dimension, where your Postgres is, service ports — so several
