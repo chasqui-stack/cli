@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from chasqui.secrets_gen import GeneratedSecrets
-from chasqui.wizard import Answers
+from chasqui.wizard import Answers, provider_packages
 
 
 @dataclass
@@ -41,6 +41,19 @@ class Step:
 
 def plan(a: Answers, s: GeneratedSecrets) -> list[Step]:
     steps = [Step("Install core dependencies (uv sync)", "core", ["uv", "sync"])]
+    # Non-Google LLM/embeddings providers need their LangChain integration
+    # package or the core ImportErrors on the first turn (cli#1). `uv add`
+    # also writes them into pyproject.toml/uv.lock, so they land in the
+    # initial commit and survive a later plain `uv sync`.
+    if pkgs := provider_packages(a):
+        steps.append(
+            Step(
+                f"Install provider packages ({', '.join(pkgs)})",
+                "core",
+                ["uv", "add", *pkgs],
+                needs=["Install core dependencies (uv sync)"],
+            )
+        )
     for ch in a.channels:
         steps.append(
             Step(f"Install {ch} gateway dependencies (uv sync)", ch, ["uv", "sync"])

@@ -30,6 +30,24 @@ EMBEDDING_PROVIDERS = {
     "ollama": ("nomic-embed-text", None),
 }
 
+# LangChain integration package per provider name (cli#1). The generated core
+# resolves LLM_PROVIDER / EMBEDDING_PROVIDER at runtime via init_chat_model /
+# init_embeddings — each needs its integration package present or it raises
+# ImportError on the first agent turn (LLM) or first embed. The core bundles
+# langchain-google-genai; every other choice must be installed at provision
+# time. Keys MUST cover every provider in LLM_PROVIDERS + EMBEDDING_PROVIDERS
+# (guarded by tests/test_providers.py).
+PROVIDER_PACKAGES = {
+    "google": "langchain-google-genai",  # already a hard dep of the core
+    "anthropic": "langchain-anthropic",
+    "openai": "langchain-openai",
+    "openrouter": "langchain-openai",  # OpenAI-compatible router — same SDK
+    "ollama": "langchain-ollama",
+}
+
+# Shipped as a hard dependency of the generated core — never re-installed.
+CORE_BUNDLED_PROVIDER_PACKAGES = {"langchain-google-genai"}
+
 FALLBACK_REPLIES = {
     "es": (
         "Lo siento, tuve un problema procesando tu mensaje. "
@@ -133,6 +151,19 @@ class Answers:
     @property
     def pg_is_local(self) -> bool:
         return self.pg_host in ("localhost", "127.0.0.1")
+
+
+def provider_packages(a: Answers) -> list[str]:
+    """LangChain integration packages the generated core needs for the chosen
+    LLM + embeddings providers, minus what it already bundles (cli#1).
+
+    Sorted and deduped — google-only (the default) returns [] (nothing to add).
+    """
+    wanted = {
+        PROVIDER_PACKAGES[a.llm_provider],
+        PROVIDER_PACKAGES[a.embedding_provider],
+    }
+    return sorted(wanted - CORE_BUNDLED_PROVIDER_PACKAGES)
 
 
 def _ask_llm(a: Answers) -> None:

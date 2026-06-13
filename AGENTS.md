@@ -33,6 +33,11 @@ Python ≥3.11 · `typer` (commands) · `questionary` (wizard) · `httpx`
   provision-time (ADR-001). Don't reorder the scaffold.
 - `INTERNAL_API_KEY` is generated once and written into BOTH core and
   gateway `.env`s — byte-identical.
+- **Provider packages follow the provider choice** (`wizard.PROVIDER_PACKAGES`):
+  the core only bundles `langchain-google-genai`, so any other LLM/embeddings
+  provider gets its `langchain-<provider>` installed via `uv add` at provision
+  time (or printed as a manual step). A new provider in `LLM_PROVIDERS` /
+  `EMBEDDING_PROVIDERS` MUST gain a `PROVIDER_PACKAGES` entry (test-guarded).
 - The CLI must never import service code (it runs in uvx's ephemeral venv).
 - Generated projects are ONE plain repo — no submodules.
 - English-only code and output (the wizard's `locale` question only
