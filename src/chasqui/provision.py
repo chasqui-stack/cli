@@ -40,11 +40,14 @@ class Step:
 
 
 def plan(a: Answers, s: GeneratedSecrets) -> list[Step]:
-    steps = [
-        Step("Install core dependencies (uv sync)", "core", ["uv", "sync"]),
-        Step("Install gateway dependencies (uv sync)", "whatsapp", ["uv", "sync"]),
-        Step("Install admin dependencies (npm install)", "admin", ["npm", "install"]),
-    ]
+    steps = [Step("Install core dependencies (uv sync)", "core", ["uv", "sync"])]
+    for ch in a.channels:
+        steps.append(
+            Step(f"Install {ch} gateway dependencies (uv sync)", ch, ["uv", "sync"])
+        )
+    steps.append(
+        Step("Install admin dependencies (npm install)", "admin", ["npm", "install"])
+    )
     if a.pg_is_local:
         steps.append(
             Step(

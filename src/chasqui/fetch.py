@@ -78,12 +78,24 @@ def _extract_into(tar_bytes: bytes, dest: Path, only: list[str] | None = None) -
             target.chmod(member.mode)
 
 
-def fetch_stack(dest: Path, ref: str, source: Path | None = None) -> None:
-    """Lay the three services + parent root files under dest."""
+def _dirs_for(channels: list[str] | None) -> dict[str, str]:
+    """Always-present services + the selected channel gateways (dir -> repo)."""
+    dirs = dict(stack.SERVICES)
+    for ch in channels or ["whatsapp"]:
+        if ch in stack.CHANNEL_SERVICES:
+            dirs[ch] = stack.CHANNEL_SERVICES[ch]
+    return dirs
+
+
+def fetch_stack(
+    dest: Path, ref: str, source: Path | None = None, channels: list[str] | None = None
+) -> None:
+    """Lay the core + admin + selected channel gateways + parent root files under dest."""
+    dirs = _dirs_for(channels)
     if source is not None:
-        _copy_local(source, dest)
+        _copy_local(source, dest, dirs)
         return
-    for dirname, repo in stack.SERVICES.items():
+    for dirname, repo in dirs.items():
         _extract_into(_download_tarball(repo, ref), dest / dirname)
     _extract_into(
         _download_tarball(stack.PARENT_REPO, ref),
@@ -92,9 +104,9 @@ def fetch_stack(dest: Path, ref: str, source: Path | None = None) -> None:
     )
 
 
-def _copy_local(source: Path, dest: Path) -> None:
+def _copy_local(source: Path, dest: Path, dirs: dict[str, str]) -> None:
     source = source.expanduser().resolve()
-    for dirname in stack.SERVICES:
+    for dirname in dirs:
         src_dir = source / dirname
         if not src_dir.is_dir():
             raise FetchError(f"--source {source} has no {dirname}/ directory")

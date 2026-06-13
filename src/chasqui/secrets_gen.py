@@ -23,5 +23,7 @@ class GeneratedSecrets:
     internal_api_key: str = field(default_factory=_urlsafe24)
     # User pastes this into the Meta webhook config — printed in the epilogue.
     wa_verify_token: str = field(default_factory=_urlsafe24)
+    # Telegram echoes this in the X-Telegram-Bot-Api-Secret-Token header.
+    telegram_webhook_secret: str = field(default_factory=_urlsafe24)
     # Fallback when the wizard's admin password is left blank.
     admin_password: str = field(default_factory=_password12)

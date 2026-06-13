@@ -44,6 +44,11 @@ def new(
     ref: str = typer.Option(
         stack.STACK_TAG, "--ref", help="Stack tag/branch to scaffold (default: pinned tag)."
     ),
+    channels: Optional[str] = typer.Option(
+        None, "--channels",
+        help="Comma-separated channels to install (whatsapp,telegram). "
+        "Overrides the wizard pick; handy with --defaults.",
+    ),
     source: Optional[Path] = typer.Option(
         None, "--source", help="Local stack checkout to copy instead of downloading (dev)."
     ),
@@ -62,6 +67,16 @@ def new(
         answers = (
             wizard.default_answers(slug) if defaults else wizard.run_wizard(slug)
         )
+        if channels:
+            picked = [c.strip() for c in channels.split(",") if c.strip()]
+            unknown = [c for c in picked if c not in stack.CHANNEL_SERVICES]
+            if unknown:
+                raise scaffold.ScaffoldError(
+                    f"unknown channel(s): {', '.join(unknown)} "
+                    f"(available: {', '.join(stack.CHANNEL_SERVICES)})"
+                )
+            if picked:
+                answers.channels = picked
         scaffold.run_new(
             answers,
             target_parent=Path.cwd(),

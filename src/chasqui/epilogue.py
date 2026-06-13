@@ -19,9 +19,16 @@ def build(a: Answers, s: GeneratedSecrets, results: list[StepResult]) -> str:
                 lines.append(f"      ({r.detail.splitlines()[-1]})")
         lines.append("")
 
-    lines.append("Start the stack (three terminals):")
+    lines.append("Start the stack (one terminal each):")
     lines.append(f"  cd {a.slug}/core && make dev        # API on :{a.core_port}")
-    lines.append(f"  cd {a.slug}/whatsapp && make dev    # gateway on :{a.gateway_port}")
+    if "whatsapp" in a.channels:
+        lines.append(
+            f"  cd {a.slug}/whatsapp && make dev    # WhatsApp gateway on :{a.gateway_port}"
+        )
+    if "telegram" in a.channels:
+        lines.append(
+            f"  cd {a.slug}/telegram && make dev    # Telegram gateway on :{a.telegram_port}"
+        )
     lines.append(
         f"  cd {a.slug}/admin && npm run dev    # panel on http://localhost:{a.admin_port}"
     )
@@ -33,21 +40,38 @@ def build(a: Answers, s: GeneratedSecrets, results: list[StepResult]) -> str:
         lines.append(f"  password (generated): {s.admin_password}")
     lines.append("")
 
-    lines.append("WhatsApp webhook (Meta app → WhatsApp → Configuration):")
-    steps = []
-    if not a.wa_configured:
-        steps.append("Fill the WA_* credentials in whatsapp/.env")
-    steps += [
-        f"Expose the gateway: ngrok http {a.gateway_port}",
-        "Set WA_CALLBACK_URL in whatsapp/.env to the ngrok https URL and "
-        "restart the gateway (it registers the webhook itself)",
-        f"Verify token (already in whatsapp/.env): {s.wa_verify_token}",
-        "Full guide: https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md",
-    ]
-    lines += [f"  {i}. {step}" for i, step in enumerate(steps, start=1)]
-    lines.append("")
+    if "whatsapp" in a.channels:
+        lines.append("WhatsApp webhook (Meta app → WhatsApp → Configuration):")
+        steps = []
+        if not a.wa_configured:
+            steps.append("Fill the WA_* credentials in whatsapp/.env")
+        steps += [
+            f"Expose the gateway: ngrok http {a.gateway_port}",
+            "Set WA_CALLBACK_URL in whatsapp/.env to the ngrok https URL and "
+            "restart the gateway (it registers the webhook itself)",
+            f"Verify token (already in whatsapp/.env): {s.wa_verify_token}",
+            "Full guide: https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md",
+        ]
+        lines += [f"  {i}. {step}" for i, step in enumerate(steps, start=1)]
+        lines.append("")
 
-    lines.append("Everything the wizard wrote lives in core/.env, whatsapp/.env and")
-    lines.append("admin/.env — LLM, embeddings*, storage, notifications are all")
-    lines.append("swappable there. (*EMBEDDING_DIM is baked in at the first migrate.)")
+    if "telegram" in a.channels:
+        lines.append("Telegram webhook:")
+        tg_steps = []
+        if not a.tg_configured:
+            tg_steps.append(
+                "Get a bot token from @BotFather and set TELEGRAM_BOT_TOKEN in telegram/.env"
+            )
+        tg_steps += [
+            f"Expose the gateway: ngrok http {a.telegram_port}",
+            "Set TELEGRAM_WEBHOOK_URL in telegram/.env to <ngrok-url>/webhook and "
+            "restart the gateway (it registers the webhook itself)",
+            "Full guide: https://github.com/chasqui-stack/chasqui/blob/main/docs/TELEGRAM-SETUP.md",
+        ]
+        lines += [f"  {i}. {step}" for i, step in enumerate(tg_steps, start=1)]
+        lines.append("")
+
+    lines.append("Everything the wizard wrote lives in each service's .env —")
+    lines.append("LLM, embeddings*, storage, notifications are all swappable")
+    lines.append("there. (*EMBEDDING_DIM is baked in at the first migrate.)")
     return "\n".join(lines)

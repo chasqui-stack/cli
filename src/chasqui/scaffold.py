@@ -15,14 +15,13 @@ ROOT_GITIGNORE = ".DS_Store\n"
 
 README_TEMPLATE = """# {name}
 
-A WhatsApp AI agent built on the [Chasqui stack](https://github.com/chasqui-stack/chasqui)
+An AI chat agent built on the [Chasqui stack](https://github.com/chasqui-stack/chasqui)
 (generated with `chasqui new`, stack {tag}).
 
 | Path | Service | Run |
 |------|---------|-----|
 | `core/` | FastAPI + LangGraph + Postgres/pgvector — the agent | `make dev` (:{core_port}) |
-| `whatsapp/` | WhatsApp channel gateway (PyWa) | `make dev` (:{gateway_port}) |
-| `admin/` | Operator panel (React + Vite) | `npm run dev` (:{admin_port}) |
+{channel_rows}| `admin/` | Operator panel (React + Vite) | `npm run dev` (:{admin_port}) |
 
 Configuration lives in each service's `.env` (written by the wizard): the
 LLM provider/model, storage, and notifications are swappable there at any
@@ -32,6 +31,20 @@ collaborators (`--profile gateway` adds the WhatsApp gateway).
 Docs: [architecture](https://github.com/chasqui-stack/chasqui/blob/main/docs/ARCHITECTURE.md)
 · [deploy (Kamal)](https://github.com/chasqui-stack/chasqui/blob/main/docs/DEPLOY.md)
 """
+
+# dir -> (description, run command, port attribute on Answers)
+_CHANNEL_README = {
+    "whatsapp": ("WhatsApp channel gateway (PyWa)", "make dev", "gateway_port"),
+    "telegram": ("Telegram channel gateway (PTB)", "make dev", "telegram_port"),
+}
+
+
+def _channel_rows(a: Answers) -> str:
+    rows = ""
+    for ch in a.channels:
+        desc, run, port_attr = _CHANNEL_README[ch]
+        rows += f"| `{ch}/` | {desc} | `{run}` (:{getattr(a, port_attr)}) |\n"
+    return rows
 
 
 class ScaffoldError(RuntimeError):
@@ -66,7 +79,7 @@ def run_new(
 
     echo(f"📦 Fetching the stack ({'local ' + str(source) if source else ref}) …")
     try:
-        fetch.fetch_stack(project_dir, ref=ref, source=source)
+        fetch.fetch_stack(project_dir, ref=ref, source=source, channels=a.channels)
     except Exception:
         shutil.rmtree(project_dir, ignore_errors=True)
         raise
@@ -76,9 +89,14 @@ def run_new(
     (project_dir / "core" / ".env").write_text(
         envfiles.render_core_env(a, secrets), encoding="utf-8"
     )
-    (project_dir / "whatsapp" / ".env").write_text(
-        envfiles.render_whatsapp_env(a, secrets), encoding="utf-8"
-    )
+    if "whatsapp" in a.channels:
+        (project_dir / "whatsapp" / ".env").write_text(
+            envfiles.render_whatsapp_env(a, secrets), encoding="utf-8"
+        )
+    if "telegram" in a.channels:
+        (project_dir / "telegram" / ".env").write_text(
+            envfiles.render_telegram_env(a, secrets), encoding="utf-8"
+        )
     (project_dir / "admin" / ".env").write_text(
         envfiles.render_admin_env(a), encoding="utf-8"
     )
@@ -89,7 +107,7 @@ def run_new(
             name=a.project_name,
             tag=ref or STACK_TAG,
             core_port=a.core_port,
-            gateway_port=a.gateway_port,
+            channel_rows=_channel_rows(a),
             admin_port=a.admin_port,
         ),
         encoding="utf-8",

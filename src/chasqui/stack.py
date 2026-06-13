@@ -10,11 +10,17 @@ ORG = "chasqui-stack"
 # Stack tag this CLI release scaffolds. Bumped together with the CLI version.
 STACK_TAG = "v0.1.3"
 
-# target directory in the generated project -> GitHub repo name
+# target directory in the generated project -> GitHub repo name.
+# Always-present services + channel gateways (the wizard picks which channels).
 SERVICES = {
     "core": "core",
-    "whatsapp": "whatsapp",
     "admin": "admin",
+}
+
+# Channel gateways — fetched only when selected in the wizard (Answers.channels).
+CHANNEL_SERVICES = {
+    "whatsapp": "whatsapp",
+    "telegram": "telegram",
 }
 
 # The parent repo contributes root files to the generated project.

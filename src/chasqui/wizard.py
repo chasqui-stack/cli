@@ -68,10 +68,14 @@ class Answers:
     pg_password: str = ""
     pg_db: str = ""  # defaults to the project slug (underscored)
 
+    # Channels to install (gateway dirs fetched + .envs written). At least one.
+    channels: list[str] = field(default_factory=lambda: ["whatsapp"])
+
     # Service ports (core PORT / gateway PORT / admin VITE_PORT) — change
     # them to run several Chasqui stacks side by side.
     core_port: int = 8090
-    gateway_port: int = 8000
+    gateway_port: int = 8000      # WhatsApp gateway
+    telegram_port: int = 8001     # Telegram gateway
     admin_port: int = 5191
 
     # WhatsApp Business (gateway .env: WA_*) — skippable, fill later
@@ -81,6 +85,11 @@ class Answers:
     wa_app_id: str = ""
     wa_app_secret: str = ""
     wa_waba_id: str = ""
+
+    # Telegram (gateway .env: TELEGRAM_*) — skippable, fill later. The webhook
+    # secret is generated (GeneratedSecrets), not asked.
+    tg_configured: bool = False
+    tg_bot_token: str = ""
 
     # One question, two files: VITE_DEFAULT_LOCALE (admin) + FALLBACK_REPLY
     # written in that language (core). English-only codebase untouched.
@@ -196,6 +205,19 @@ def _ask_postgres(a: Answers) -> None:
     a.pg_db = questionary.text("Database name:", default=a.db_name).ask()
 
 
+def _ask_channels(a: Answers) -> None:
+    selected = questionary.checkbox(
+        "Which channels do you want to install? (each is a stateless gateway "
+        "speaking the same core contract — add more any time)",
+        choices=[
+            questionary.Choice("WhatsApp (PyWa)", "whatsapp", checked=True),
+            questionary.Choice("Telegram (python-telegram-bot)", "telegram"),
+        ],
+    ).ask() or []
+    # At least one channel — fall back to WhatsApp if nothing was picked.
+    a.channels = selected or ["whatsapp"]
+
+
 def _ask_ports(a: Answers) -> None:
     a.core_port = int(
         questionary.text(
@@ -204,9 +226,14 @@ def _ask_ports(a: Answers) -> None:
             default=str(a.core_port),
         ).ask()
     )
-    a.gateway_port = int(
-        questionary.text("WhatsApp gateway port:", default=str(a.gateway_port)).ask()
-    )
+    if "whatsapp" in a.channels:
+        a.gateway_port = int(
+            questionary.text("WhatsApp gateway port:", default=str(a.gateway_port)).ask()
+        )
+    if "telegram" in a.channels:
+        a.telegram_port = int(
+            questionary.text("Telegram gateway port:", default=str(a.telegram_port)).ask()
+        )
     a.admin_port = int(
         questionary.text("Admin panel port:", default=str(a.admin_port)).ask()
     )
@@ -215,6 +242,20 @@ def _ask_ports(a: Answers) -> None:
 WHATSAPP_GUIDE_URL = (
     "https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md"
 )
+TELEGRAM_GUIDE_URL = (
+    "https://github.com/chasqui-stack/chasqui/blob/main/docs/TELEGRAM-SETUP.md"
+)
+
+
+def _ask_telegram(a: Answers) -> None:
+    a.tg_configured = questionary.confirm(
+        "Configure the Telegram bot token now? (you can fill telegram/.env "
+        f"later — how to get one from @BotFather: {TELEGRAM_GUIDE_URL})",
+        default=False,
+    ).ask()
+    if not a.tg_configured:
+        return
+    a.tg_bot_token = questionary.password("TELEGRAM_BOT_TOKEN:").ask() or ""
 
 
 def _ask_whatsapp(a: Answers) -> None:
@@ -298,8 +339,12 @@ def run_wizard(project_name: str) -> Answers:
     _ask_llm(a)
     _ask_embeddings(a)
     _ask_postgres(a)
+    _ask_channels(a)
     _ask_ports(a)
-    _ask_whatsapp(a)
+    if "whatsapp" in a.channels:
+        _ask_whatsapp(a)
+    if "telegram" in a.channels:
+        _ask_telegram(a)
     _ask_locale_and_admin(a)
     _ask_extras(a)
     return a
