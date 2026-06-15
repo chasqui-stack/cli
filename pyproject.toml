@@ -1,6 +1,6 @@
 [project]
 name = "chasqui"
-version = "0.2.3"
+version = "0.2.4"
 description = "Chasqui stack generator — `uvx chasqui new <name>`: zero to a running AI chat agent in one command"
 readme = "README.md"
 license = "Apache-2.0"
