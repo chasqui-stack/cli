@@ -85,6 +85,9 @@ def new(
             skip_provision=skip_provision,
             echo=typer.echo,
         )
+        typer.echo("")
+        typer.echo("Teach your coding agent to extend this stack:")
+        typer.echo("  npx skills add chasqui-stack/skills --skill '*'")
     except (scaffold.ScaffoldError, Exception) as exc:
         if isinstance(exc, typer.Exit):
             raise

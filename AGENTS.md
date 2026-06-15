@@ -59,7 +59,7 @@ publishes. PyPI publishing is **trusted publishing** (no tokens): the
 (project `chasqui`, owner `chasqui-stack`, repo `cli`, environment `pypi`)
 under Willy's account — pushing a `v*` tag IS the publish action.
 
-1. **Tag the services** — in core, whatsapp and admin:
+1. **Tag the services** — in core, admin, whatsapp and telegram:
    `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
    In the parent: bump submodule pointers, commit, tag `vX.Y.Z`, push.
 2. **Pin + bump the CLI** — `STACK_TAG = "vX.Y.Z"` in
@@ -73,12 +73,18 @@ under Willy's account — pushing a `v*` tag IS the publish action.
    X.Y.Z+1.
 4. **GitHub Releases** — `gh release create vX.Y.Z` here and on the
    parent (release notes live on the parent's).
-5. **Verify from the wild** —
+5. **Bump + tag the skills** — in `chasqui-stack/skills` (ADR-009), the
+   skills' doc pointers pin the stack tag. Bump every
+   `raw.githubusercontent.com/chasqui-stack/chasqui/vX.Y.Z/...` URL across
+   `config/skills/**/SKILL.md` (the parent tag from step 1 must exist so
+   they resolve), bump `plugin.json` version, commit, tag `vX.Y.Z`, push.
+   Skills are lockstep with `STACK_TAG`.
+6. **Verify from the wild** —
    `uvx chasqui@X.Y.Z --version` and
    `uvx chasqui new demo --defaults --skip-provision` in a scratch dir
    (this also proves the codeload fetch at the new tag).
 
-Hard rules: never tag the CLI before the services' tags exist (step 5
+Hard rules: never tag the CLI before the services' tags exist (step 6
 would 404); a stack-only patch still needs a CLI release if `STACK_TAG`
 must move.
 
