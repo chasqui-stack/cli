@@ -30,6 +30,16 @@ EMBEDDING_PROVIDERS = {
     "ollama": ("nomic-embed-text", None),
 }
 
+# Speech-to-text providers for the audio fallback (ADR-010). OpenAI-compatible
+# API, so the generated core needs no extra package (it uses httpx). The base
+# URL is derived from the provider name in the core — only the model differs.
+# Groq is the default: native OGG/Opus (WhatsApp/Telegram voice), cheapest.
+STT_PROVIDERS = {
+    # provider -> default STT_MODEL
+    "groq": "whisper-large-v3-turbo",
+    "openai": "gpt-4o-mini-transcribe",  # note: OGG needs a supported format (ADR-010)
+}
+
 # LangChain integration package per provider name (cli#1). The generated core
 # resolves LLM_PROVIDER / EMBEDDING_PROVIDER at runtime via init_chat_model /
 # init_embeddings — each needs its integration package present or it raises
@@ -118,6 +128,13 @@ class Answers:
     admin_email: str = "admin@example.com"
     admin_name: str = "Admin"
     admin_password: str = ""  # blank -> generated + printed
+
+    # Speech-to-text fallback (core .env: STT_*, ADR-010) — optional. Transcribes
+    # a voice note to text before the turn when the LLM lacks native audio.
+    # Empty provider = disabled (the agent asks the user to type it).
+    stt_provider: str = ""
+    stt_api_key: str = ""
+    stt_model: str = "whisper-large-v3-turbo"
 
     # Extras (all optional)
     storage_endpoint_url: str = ""
@@ -331,6 +348,9 @@ def _ask_extras(a: Answers) -> None:
             "Extras? (all optional, all .env-switchable later)",
             choices=[
                 questionary.Choice("Media storage bucket (S3-compatible)", "storage"),
+                questionary.Choice(
+                    "Speech-to-text for voice notes (LLMs without native audio)", "stt"
+                ),
                 questionary.Choice("Handoff webhook notification", "webhook"),
                 questionary.Choice("Handoff email notification (SMTP relay)", "smtp"),
                 questionary.Choice("Deploy placeholders (Kamal)", "deploy"),
@@ -338,6 +358,22 @@ def _ask_extras(a: Answers) -> None:
         ).ask()
         or []
     )
+    if "stt" in extras:
+        a.stt_provider = questionary.select(
+            "STT provider (transcribes audio when your LLM can't hear — "
+            "Groq is native OGG/Opus and cheapest):",
+            choices=list(STT_PROVIDERS),
+            default="groq",
+        ).ask()
+        a.stt_model = questionary.text(
+            "STT model (free text):", default=STT_PROVIDERS[a.stt_provider]
+        ).ask()
+        a.stt_api_key = (
+            questionary.password(
+                f"STT_API_KEY ({a.stt_provider} — separate from your LLM key):"
+            ).ask()
+            or ""
+        )
     if "storage" in extras:
         a.storage_endpoint_url = (
             questionary.text("STORAGE_ENDPOINT_URL (blank for AWS S3):").ask() or ""

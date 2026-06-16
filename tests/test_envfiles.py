@@ -43,7 +43,14 @@ def test_ollama_gets_base_url_not_key():
     a.embedding_provider, a.embedding_model = "ollama", "nomic-embed-text"
     _, core, _ = _render_all(a)
     assert "OLLAMA_BASE_URL=http://localhost:11434" in core
-    assert "API_KEY" not in core.replace("INTERNAL_API_KEY", "")
+    # No ACTIVE provider key for a keyless setup. Commented placeholders (e.g.
+    # the disabled STT block's `# STT_API_KEY=`) are documentation, not a leak;
+    # INTERNAL_API_KEY is the gateway shared secret, not a provider key.
+    active = [
+        ln for ln in core.splitlines()
+        if "API_KEY" in ln and not ln.lstrip().startswith("#")
+    ]
+    assert all(ln.startswith("INTERNAL_API_KEY=") for ln in active)
 
 
 def test_storage_and_smtp_blocks_render_when_configured():
@@ -55,6 +62,24 @@ def test_storage_and_smtp_blocks_render_when_configured():
     assert "STORAGE_BUCKET=b" in core
     assert "SMTP_HOST=smtp-relay.brevo.com" in core
     assert "NOTIFY_EMAIL_TO=ops@x.com" in core
+
+
+def test_stt_block_renders_when_configured():
+    a = default_answers("demo")
+    a.stt_provider, a.stt_model, a.stt_api_key = "groq", "whisper-large-v3-turbo", "gsk_x"
+    _, core, _ = _render_all(a)
+    assert "STT_PROVIDER=groq" in core
+    assert "STT_MODEL=whisper-large-v3-turbo" in core
+    assert "STT_API_KEY=gsk_x" in core
+
+
+def test_stt_disabled_by_default_is_commented():
+    a = default_answers("demo")
+    _, core, _ = _render_all(a)
+    # No ACTIVE STT line; the block ships as commented documentation.
+    active = [ln for ln in core.splitlines() if ln.startswith("STT_PROVIDER=")]
+    assert active == []
+    assert "# STT_PROVIDER=groq" in core
 
 
 def test_whatsapp_env_placeholders_and_verify_token():

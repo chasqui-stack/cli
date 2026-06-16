@@ -152,6 +152,24 @@ def render_core_env(a: Answers, s: GeneratedSecrets) -> str:
             "# NOTIFY_EMAIL_TO="
         )
 
+    if a.stt_provider:
+        blocks.append(
+            "# Speech-to-text fallback (ADR-010) — transcribe voice notes when the\n"
+            "# LLM lacks native audio. Key is SEPARATE from the LLM key.\n"
+            f"STT_PROVIDER={a.stt_provider}\n"
+            f"STT_MODEL={a.stt_model}\n"
+            f"STT_API_KEY={a.stt_api_key}"
+        )
+    else:
+        blocks.append(
+            "# Speech-to-text fallback (ADR-010) — OPTIONAL; unset = the agent asks\n"
+            "# the user to type a voice note when the LLM can't hear. Groq default\n"
+            "# (native OGG/Opus). See core/.env.example.\n"
+            "# STT_PROVIDER=groq\n"
+            "# STT_MODEL=whisper-large-v3-turbo\n"
+            "# STT_API_KEY="
+        )
+
     blocks.append(
         "# Agent turn\n"
         "HISTORY_LIMIT=20\n"
