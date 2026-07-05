@@ -30,7 +30,7 @@ def run_checks() -> list[Check]:
 
     for tool, args, hint in [
         ("uv", ["uv", "--version"], "https://docs.astral.sh/uv/ — required for core/gateway"),
-        ("node", ["node", "--version"], "Node 22 LTS — required for the admin panel"),
+        ("node", ["node", "--version"], "Node >=20 — required for the admin panel and the web gateway"),
         ("npm", ["npm", "--version"], "ships with Node"),
         ("git", ["git", "--version"], "needed for the project's first commit"),
         ("psql", ["psql", "--version"], "optional — used to create the database"),

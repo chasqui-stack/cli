@@ -36,6 +36,7 @@ Docs: [architecture](https://github.com/chasqui-stack/chasqui/blob/main/docs/ARC
 _CHANNEL_README = {
     "whatsapp": ("WhatsApp channel gateway (PyWa)", "make dev", "gateway_port"),
     "telegram": ("Telegram channel gateway (PTB)", "make dev", "telegram_port"),
+    "web": ("Web channel — embeddable chat widget (Express + Preact)", "npm run dev", "web_port"),
 }
 
 
@@ -96,6 +97,10 @@ def run_new(
     if "telegram" in a.channels:
         (project_dir / "telegram" / ".env").write_text(
             envfiles.render_telegram_env(a, secrets), encoding="utf-8"
+        )
+    if "web" in a.channels:
+        (project_dir / "web" / ".env").write_text(
+            envfiles.render_web_env(a, secrets), encoding="utf-8"
         )
     (project_dir / "admin" / ".env").write_text(
         envfiles.render_admin_env(a), encoding="utf-8"
