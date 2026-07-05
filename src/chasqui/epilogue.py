@@ -29,6 +29,10 @@ def build(a: Answers, s: GeneratedSecrets, results: list[StepResult]) -> str:
         lines.append(
             f"  cd {a.slug}/telegram && make dev    # Telegram gateway on :{a.telegram_port}"
         )
+    if "web" in a.channels:
+        lines.append(
+            f"  cd {a.slug}/web && npm run dev      # web widget gateway on :{a.web_port}"
+        )
     lines.append(
         f"  cd {a.slug}/admin && npm run dev    # panel on http://localhost:{a.admin_port}"
     )
@@ -69,6 +73,17 @@ def build(a: Answers, s: GeneratedSecrets, results: list[StepResult]) -> str:
             "Full guide: https://github.com/chasqui-stack/chasqui/blob/main/docs/TELEGRAM-SETUP.md",
         ]
         lines += [f"  {i}. {step}" for i, step in enumerate(tg_steps, start=1)]
+        lines.append("")
+
+    if "web" in a.channels:
+        lines.append("Web widget (no webhook — replies stream over SSE, ADR-011):")
+        web_steps = [
+            f"Try it locally: open http://localhost:{a.web_port}/demo (demo page)",
+            "Embed it anywhere on an allowed origin: "
+            f'<script src="http://localhost:{a.web_port}/widget.js"></script>',
+            f"Allowed origins live in web/.env: WEB_ALLOWED_ORIGINS={a.web_allowed_origins}",
+        ]
+        lines += [f"  {i}. {step}" for i, step in enumerate(web_steps, start=1)]
         lines.append("")
 
     lines.append("Everything the wizard wrote lives in each service's .env —")

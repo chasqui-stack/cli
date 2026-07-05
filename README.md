@@ -6,13 +6,15 @@ uvx chasqui new mi-agente
 
 Zero to a configured, locally-running AI chat agent in one command — the
 project generator of the [Chasqui stack](https://github.com/chasqui-stack/chasqui)
-(WhatsApp channel included; more channels on the roadmap).
+(pick your channels: WhatsApp, Telegram, embeddable web chat widget).
 
 The wizard asks only what becomes a `.env` variable (LLM provider/model,
-embeddings + dimension, where your Postgres is, service ports — so several
-stacks coexist —, WhatsApp credentials ([how to get them](https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md)),
+embeddings + dimension, where your Postgres is, which channels to install,
+service ports — so several stacks coexist —, WhatsApp credentials
+([how to get them](https://github.com/chasqui-stack/chasqui/blob/main/docs/WHATSAPP-SETUP.md)),
+the Telegram bot token, the web widget's allowed embed origins,
 default language, first admin, optional media bucket / handoff notifications
-/ deploy params) — then downloads the three services at a pinned release tag
+/ deploy params) — then downloads the services at a pinned release tag
 (degit-style, no git history), brands them, writes the `.env`s, generates the
 shared secrets, and provisions: `uv sync` + `npm install` + `createdb` +
 migrations + admin seed. Every step that can't run prints its manual command

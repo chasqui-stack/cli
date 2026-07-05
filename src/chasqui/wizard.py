@@ -104,6 +104,7 @@ class Answers:
     core_port: int = 8090
     gateway_port: int = 8000      # WhatsApp gateway
     telegram_port: int = 8001     # Telegram gateway
+    web_port: int = 8002          # Web gateway (widget + Express, ADR-011)
     admin_port: int = 5191
 
     # WhatsApp Business (gateway .env: WA_*) — skippable, fill later
@@ -118,6 +119,10 @@ class Answers:
     # secret is generated (GeneratedSecrets), not asked.
     tg_configured: bool = False
     tg_bot_token: str = ""
+
+    # Web widget (gateway .env: WEB_ALLOWED_ORIGINS, ADR-011) — no token: the
+    # gateway shares INTERNAL_API_KEY with the core like every other channel.
+    web_allowed_origins: str = "http://localhost:8002"
 
     # One question, two files: VITE_DEFAULT_LOCALE (admin) + FALLBACK_REPLY
     # written in that language (core). English-only codebase untouched.
@@ -260,6 +265,7 @@ def _ask_channels(a: Answers) -> None:
         choices=[
             questionary.Choice("WhatsApp (PyWa)", "whatsapp", checked=True),
             questionary.Choice("Telegram (python-telegram-bot)", "telegram"),
+            questionary.Choice("Web (embeddable chat widget)", "web"),
         ],
     ).ask() or []
     # At least one channel — fall back to WhatsApp if nothing was picked.
@@ -282,6 +288,14 @@ def _ask_ports(a: Answers) -> None:
         a.telegram_port = int(
             questionary.text("Telegram gateway port:", default=str(a.telegram_port)).ask()
         )
+    if "web" in a.channels:
+        a.web_port = int(
+            questionary.text("Web gateway port:", default=str(a.web_port)).ask()
+        )
+        # The widget is served from the gateway itself, so the local default
+        # origin follows the port choice.
+        if a.web_allowed_origins == "http://localhost:8002":
+            a.web_allowed_origins = f"http://localhost:{a.web_port}"
     a.admin_port = int(
         questionary.text("Admin panel port:", default=str(a.admin_port)).ask()
     )
@@ -304,6 +318,17 @@ def _ask_telegram(a: Answers) -> None:
     if not a.tg_configured:
         return
     a.tg_bot_token = questionary.password("TELEGRAM_BOT_TOKEN:").ask() or ""
+
+
+def _ask_web(a: Answers) -> None:
+    a.web_allowed_origins = (
+        questionary.text(
+            "WEB_ALLOWED_ORIGINS (comma-separated origins of the sites that "
+            "will embed the widget — the local default is fine for dev):",
+            default=a.web_allowed_origins,
+        ).ask()
+        or a.web_allowed_origins
+    )
 
 
 def _ask_whatsapp(a: Answers) -> None:
@@ -412,6 +437,8 @@ def run_wizard(project_name: str) -> Answers:
         _ask_whatsapp(a)
     if "telegram" in a.channels:
         _ask_telegram(a)
+    if "web" in a.channels:
+        _ask_web(a)
     _ask_locale_and_admin(a)
     _ask_extras(a)
     return a

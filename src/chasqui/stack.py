@@ -21,6 +21,7 @@ SERVICES = {
 CHANNEL_SERVICES = {
     "whatsapp": "whatsapp",
     "telegram": "telegram",
+    "web": "web",
 }
 
 # The parent repo contributes root files to the generated project.

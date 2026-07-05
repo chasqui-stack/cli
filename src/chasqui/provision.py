@@ -55,9 +55,15 @@ def plan(a: Answers, s: GeneratedSecrets) -> list[Step]:
             )
         )
     for ch in a.channels:
-        steps.append(
-            Step(f"Install {ch} gateway dependencies (uv sync)", ch, ["uv", "sync"])
-        )
+        if ch == "web":
+            # The web gateway is a Node monolith (ADR-011) — npm, not uv.
+            steps.append(
+                Step("Install web gateway dependencies (npm install)", "web", ["npm", "install"])
+            )
+        else:
+            steps.append(
+                Step(f"Install {ch} gateway dependencies (uv sync)", ch, ["uv", "sync"])
+            )
     steps.append(
         Step("Install admin dependencies (npm install)", "admin", ["npm", "install"])
     )

@@ -46,7 +46,7 @@ def new(
     ),
     channels: Optional[str] = typer.Option(
         None, "--channels",
-        help="Comma-separated channels to install (whatsapp,telegram). "
+        help="Comma-separated channels to install (whatsapp,telegram,web). "
         "Overrides the wizard pick; handy with --defaults.",
     ),
     source: Optional[Path] = typer.Option(
