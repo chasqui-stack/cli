@@ -59,7 +59,7 @@ publishes. PyPI publishing is **trusted publishing** (no tokens): the
 (project `chasqui`, owner `chasqui-stack`, repo `cli`, environment `pypi`)
 under Willy's account — pushing a `v*` tag IS the publish action.
 
-1. **Tag the services** — in core, admin, whatsapp and telegram:
+1. **Tag the services** — in core, admin, whatsapp, telegram and web:
    `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
    In the parent: bump submodule pointers, commit, tag `vX.Y.Z`, push.
 2. **Pin + bump the CLI** — `STACK_TAG = "vX.Y.Z"` in
