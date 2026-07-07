@@ -1,11 +1,12 @@
-"""Chasqui CLI — `uvx chasqui new <name>` / `chasqui generate module <name>`."""
+"""Chasqui CLI — `uvx chasqui new <name>` / `chasqui generate module <name>` /
+`chasqui add channel <name>`."""
 
 from pathlib import Path
 from typing import Optional
 
 import typer
 
-from chasqui import __version__, module_gen, preflight, scaffold, stack, wizard
+from chasqui import __version__, add_channel, module_gen, preflight, scaffold, stack, wizard
 
 app = typer.Typer(
     name="chasqui",
@@ -14,6 +15,11 @@ app = typer.Typer(
 )
 generate_app = typer.Typer(help="Code generators (à la `rails generate`).", no_args_is_help=True)
 app.add_typer(generate_app, name="generate")
+add_app = typer.Typer(
+    help="Add pieces to an existing project (run from the project root).",
+    no_args_is_help=True,
+)
+app.add_typer(add_app, name="add")
 
 
 def _version_callback(value: bool) -> None:
@@ -89,6 +95,61 @@ def new(
         typer.echo("Teach your coding agent to extend this stack:")
         typer.echo("  npx skills add chasqui-stack/skills --skill '*'")
     except (scaffold.ScaffoldError, Exception) as exc:
+        if isinstance(exc, typer.Exit):
+            raise
+        typer.secho(f"error: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+
+
+@add_app.command("channel")
+def add_channel_cmd(
+    name: str = typer.Argument(..., help="Channel to add: whatsapp | telegram | web"),
+    defaults: bool = typer.Option(
+        False, "--defaults", help="Skip the questions — placeholder config, CI-friendly."
+    ),
+    skip_provision: bool = typer.Option(
+        False, "--skip-provision", help="Write files only; no uv sync / npm install."
+    ),
+    ref: Optional[str] = typer.Option(
+        None, "--ref",
+        help="Stack tag/branch to fetch (default: the tag the project was "
+        "scaffolded from, per its README).",
+    ),
+    source: Optional[Path] = typer.Option(
+        None, "--source", help="Local stack checkout to copy instead of downloading (dev)."
+    ),
+) -> None:
+    """Retrofit a channel gateway into an existing Chasqui project."""
+    try:
+        if name not in stack.CHANNEL_SERVICES:
+            raise add_channel.AddChannelError(
+                f"unknown channel: {name} "
+                f"(available: {', '.join(stack.CHANNEL_SERVICES)})"
+            )
+        project_dir = add_channel.detect_project(Path.cwd())
+
+        resolved_ref = ref or add_channel.detect_stack_ref(project_dir)
+        if resolved_ref is None:
+            resolved_ref = stack.STACK_TAG
+            typer.echo(
+                f"⚠️  Could not detect the project's stack tag — using the "
+                f"CLI's pinned {resolved_ref} (override with --ref)."
+            )
+
+        answers = add_channel.base_answers(project_dir, name)
+        if not defaults:
+            wizard.run_channel_wizard(name, answers)
+
+        add_channel.run_add(
+            name,
+            answers,
+            project_dir=project_dir,
+            ref=resolved_ref,
+            source=source,
+            skip_provision=skip_provision,
+            echo=typer.echo,
+        )
+    except Exception as exc:
         if isinstance(exc, typer.Exit):
             raise
         typer.secho(f"error: {exc}", fg=typer.colors.RED, err=True)

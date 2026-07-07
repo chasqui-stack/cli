@@ -1,7 +1,9 @@
 # AGENTS.md — Chasqui CLI
 
 The **stack generator**: `uvx chasqui new <name>` scaffolds a configured
-Chasqui project; `chasqui generate module <name>` scaffolds a Tool Module.
+Chasqui project; `chasqui generate module <name>` scaffolds a Tool Module;
+`chasqui add channel <name>` retrofits a channel gateway into an existing
+project (run from the project root — cli#5).
 Part of [`chasqui-stack`](https://github.com/chasqui-stack/chasqui) — design
 locked in the parent's `docs/design/adr-005-cli-generator.md`. **Read it
 before changing behavior.**
@@ -23,6 +25,11 @@ Python ≥3.11 · `typer` (commands) · `questionary` (wizard) · `httpx`
   and disables only its dependents.
 - `module_gen.py` — the Tool Module templates (parent ARCHITECTURE §8;
   reference implementation `core/app/modules/faq/`).
+- `add_channel.py` — `chasqui add channel`: detect the project (core/.env)
+  and its stack tag (README), fetch one gateway dir, render its `.env`
+  READING the existing `INTERNAL_API_KEY` (never regenerated), append
+  `CHANNEL_<CH>_SEND_URL` to core/.env (idempotent), provision best-effort.
+  No git commit — it mutates the USER's repo; they review and commit.
 
 ## Key rules
 
