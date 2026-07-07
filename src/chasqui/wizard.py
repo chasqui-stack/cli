@@ -426,6 +426,40 @@ def _ask_extras(a: Answers) -> None:
         a.deploy_server_ip = questionary.text("Server IP:").ask()
 
 
+# channel -> the Answers attribute holding its gateway port
+CHANNEL_PORT_ATTRS = {
+    "whatsapp": "gateway_port",
+    "telegram": "telegram_port",
+    "web": "web_port",
+}
+
+_CHANNEL_ASKERS = {
+    "whatsapp": _ask_whatsapp,
+    "telegram": _ask_telegram,
+    "web": _ask_web,
+}
+
+
+def run_channel_wizard(channel: str, a: Answers) -> Answers:
+    """The `chasqui add channel` prompts — only that channel's questions."""
+    port_attr = CHANNEL_PORT_ATTRS[channel]
+    setattr(
+        a,
+        port_attr,
+        int(
+            questionary.text(
+                f"{channel} gateway port:", default=str(getattr(a, port_attr))
+            ).ask()
+        ),
+    )
+    # The widget is served from the gateway itself, so the local default
+    # origin follows the port choice (same rule as _ask_ports).
+    if channel == "web" and a.web_allowed_origins == "http://localhost:8002":
+        a.web_allowed_origins = f"http://localhost:{a.web_port}"
+    _CHANNEL_ASKERS[channel](a)
+    return a
+
+
 def run_wizard(project_name: str) -> Answers:
     a = Answers(project_name=project_name)
     _ask_llm(a)

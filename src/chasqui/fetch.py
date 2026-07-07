@@ -104,6 +104,21 @@ def fetch_stack(
     )
 
 
+def fetch_channel(
+    project_dir: Path, channel: str, ref: str, source: Path | None = None
+) -> None:
+    """Lay ONE channel gateway dir under an existing project (`add channel`)."""
+    repo = stack.CHANNEL_SERVICES[channel]
+    if source is not None:
+        source = source.expanduser().resolve()
+        src_dir = source / channel
+        if not src_dir.is_dir():
+            raise FetchError(f"--source {source} has no {channel}/ directory")
+        shutil.copytree(src_dir, project_dir / channel, ignore=_COPY_IGNORE)
+        return
+    _extract_into(_download_tarball(repo, ref), project_dir / channel)
+
+
 def _copy_local(source: Path, dest: Path, dirs: dict[str, str]) -> None:
     source = source.expanduser().resolve()
     for dirname in dirs:

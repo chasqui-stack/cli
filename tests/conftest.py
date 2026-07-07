@@ -37,6 +37,16 @@ def mini_stack(tmp_path):
     )
     (whatsapp / ".gitignore").write_text(".env\n")
 
+    telegram = root / "telegram"
+    telegram.mkdir(parents=True)
+    (telegram / ".gitignore").write_text(".env\n")
+    (telegram / "Makefile").write_text("dev:\n\techo dev\n")
+
+    web = root / "web"
+    web.mkdir(parents=True)
+    (web / ".gitignore").write_text(".env\nnode_modules/\n")
+    (web / "package.json").write_text('{\n  "name": "chasqui-web"\n}\n')
+
     admin = root / "admin"
     (admin / "config").mkdir(parents=True)
     (admin / "package.json").write_text('{\n  "name": "chasqui-admin"\n}\n')
