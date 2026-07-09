@@ -1,3 +1,3 @@
 """Chasqui stack generator — `uvx chasqui new <name>`."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

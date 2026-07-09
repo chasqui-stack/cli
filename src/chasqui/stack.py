@@ -8,7 +8,7 @@ development against unreleased branches.
 ORG = "chasqui-stack"
 
 # Stack tag this CLI release scaffolds. Bumped together with the CLI version.
-STACK_TAG = "v0.3.0"
+STACK_TAG = "v0.4.0"
 
 # target directory in the generated project -> GitHub repo name.
 # Always-present services + channel gateways (the wizard picks which channels).
